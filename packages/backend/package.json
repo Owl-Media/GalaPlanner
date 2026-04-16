@@ -27,7 +27,7 @@
     "@types/papaparse": "^5.3.14",
     "@types/pdf-parse": "^1.1.5",
     "tsx": "^4.7.1",
-    "typescript": "^5.4.2",
+    "typescript": "^6.0.2",
     "vitest": "^4.1.4"
   }
 }
