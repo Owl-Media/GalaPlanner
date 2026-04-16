@@ -353,6 +353,7 @@ export function ParsedPreview({ result, onReset }: ParsedPreviewProps) {
                   locomotives={editedResult.locomotives}
                   allTimes={allTimes}
                   selectedDayId={selectedDayId}
+                  onNavigateToStations={() => setActiveView('stations')}
                   onServiceUpdate={updateService}
                   onServiceAdd={addService}
                   onServiceDelete={deleteService}

@@ -71,6 +71,77 @@
   box-shadow: 0 0 0 2px rgba(74, 144, 164, 0.2);
 }
 
+.add-service-modal__inline-action {
+  display: flex;
+  gap: var(--space-sm, 8px);
+}
+
+.add-service-modal__inline-action input {
+  flex: 1;
+}
+
+.add-service-modal__hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted, #666);
+}
+
+.add-service-modal__callout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs, 4px);
+  padding: var(--space-sm, 8px) var(--space-md, 12px);
+  border: 1px dashed rgba(74, 144, 164, 0.2);
+  border-radius: var(--radius-md, 4px);
+  background-color: rgba(74, 144, 164, 0.06);
+  text-align: center;
+}
+
+.add-service-modal__callout-text {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-muted, #666);
+}
+
+.add-service-modal__secondary-btn,
+.add-service-modal__link-btn {
+  align-self: flex-start;
+  padding: var(--space-sm, 8px) var(--space-md, 12px);
+  border-radius: var(--radius-md, 4px);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.add-service-modal__secondary-btn {
+  border: 1px solid var(--color-border, #ddd);
+  background-color: var(--color-bg, #fff);
+  color: var(--color-text, #333);
+}
+
+.add-service-modal__secondary-btn:hover {
+  background-color: var(--color-bg, #f5f5f5);
+  border-color: var(--color-text-muted, #666);
+}
+
+.add-service-modal__link-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--color-primary, #4a90a4);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.add-service-modal__link-btn:hover {
+  color: var(--color-primary-dark, #3a7a94);
+}
+
 .add-service-modal__actions {
   display: flex;
   justify-content: flex-end;
@@ -110,6 +181,12 @@
   background-color: var(--color-primary-dark, #3a7a94);
 }
 
+.add-service-modal__add-btn:disabled,
+.add-service-modal__secondary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @media (max-width: 480px) {
   .add-service-modal {
     margin: var(--space-md, 12px);
@@ -118,5 +195,9 @@
 
   .add-service-modal__row {
     grid-template-columns: 1fr;
+  }
+
+  .add-service-modal__inline-action {
+    flex-direction: column;
   }
 }
