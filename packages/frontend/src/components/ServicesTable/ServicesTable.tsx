@@ -11,6 +11,7 @@ interface ServicesTableProps {
   locomotives: Locomotive[];
   allTimes?: string[];
   selectedDayId?: string | null;
+  onNavigateToStations?: () => void;
   onServiceUpdate?: (id: string, updates: Partial<Service>) => void;
   onServiceAdd?: (service: Omit<Service, 'id' | 'sourceConfidence' | 'isUserEdited'>) => string;
   onServiceDelete?: (id: string) => void;
@@ -80,6 +81,7 @@ export function ServicesTable({
   locomotives,
   allTimes = [],
   selectedDayId,
+  onNavigateToStations,
   onServiceUpdate,
   onServiceAdd,
   onServiceDelete,
@@ -212,6 +214,10 @@ export function ServicesTable({
     [onServiceRestore]
   );
 
+  const handleAddTimeOption = useCallback((time: string) => {
+    setCustomTimes((prev) => (prev.includes(time) ? prev : [...prev, time]));
+  }, []);
+
   const canEdit = onServiceUpdate && onServiceAdd && onServiceDelete;
 
   if (services.length === 0) {
@@ -238,6 +244,11 @@ export function ServicesTable({
             locomotives={locomotives}
             allTimes={[...new Set([...allTimes, ...customTimes])].sort(compareTime)}
             selectedDayId={selectedDayId || undefined}
+            onAddTimeOption={handleAddTimeOption}
+            onNavigateToStations={() => {
+              setShowAddServiceModal(false);
+              onNavigateToStations?.();
+            }}
             onAdd={handleAddService}
             onCancel={() => setShowAddServiceModal(false)}
           />
@@ -479,6 +490,11 @@ export function ServicesTable({
           locomotives={locomotives}
           allTimes={[...new Set([...allTimes, ...customTimes])].sort(compareTime)}
           selectedDayId={selectedDayId || undefined}
+          onAddTimeOption={handleAddTimeOption}
+          onNavigateToStations={() => {
+            setShowAddServiceModal(false);
+            onNavigateToStations?.();
+          }}
           onAdd={handleAddService}
           onCancel={() => setShowAddServiceModal(false)}
         />
