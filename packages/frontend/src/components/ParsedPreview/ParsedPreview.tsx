@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import type { ParseResult, UserConstraints, PlanWithAnalysis, Service, Locomotive } from '@gala-planner/shared';
+import type { UserConstraints, PlanWithAnalysis, Service, Locomotive } from '@gala-planner/shared';
 import { ServicesTable } from '../ServicesTable';
 import { PlanControls } from '../PlanControls';
 import { PlanDisplay } from '../PlanDisplay';
@@ -8,11 +8,10 @@ import { LocoView } from '../LocoView';
 import { StationView } from '../StationView';
 import { generatePlan } from '../../api/client';
 import { useEditedServices } from '../../hooks/useEditedServices';
+import type { SavedWorkspace, WorkspaceView } from '../../types/workspace';
 import './ParsedPreview.css';
 
-type ViewType = 'plan' | 'timeline' | 'locos' | 'stations' | 'table';
-
-const NAV_ITEMS: { id: ViewType; label: string; icon: string }[] = [
+const NAV_ITEMS: { id: WorkspaceView; label: string; icon: string }[] = [
   { id: 'table', label: 'Table', icon: '📃' },
   { id: 'timeline', label: 'Timeline', icon: '📊' },
   { id: 'locos', label: 'Locos', icon: '🚂' },
@@ -21,18 +20,23 @@ const NAV_ITEMS: { id: ViewType; label: string; icon: string }[] = [
 ];
 
 interface ParsedPreviewProps {
-  result: ParseResult;
-  onReset: () => void;
+  workspace: SavedWorkspace;
+  onWorkspaceChange: (updates: Partial<SavedWorkspace>) => void;
 }
 
-export function ParsedPreview({ result, onReset }: ParsedPreviewProps) {
-  const [plansWithAnalysis, setPlansWithAnalysis] = useState<PlanWithAnalysis[]>([]);
+export function ParsedPreview({
+  workspace,
+  onWorkspaceChange,
+}: ParsedPreviewProps) {
+  const [plansWithAnalysis, setPlansWithAnalysis] = useState<PlanWithAnalysis[]>(
+    workspace.plansWithAnalysis
+  );
   const [isGenerating, setIsGenerating] = useState(false);
-  const [planError, setPlanError] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<ViewType>('table');
-  const [selectedLocoId, setSelectedLocoId] = useState<string | null>(null);
+  const [planError, setPlanError] = useState<string | null>(workspace.planError);
+  const [activeView, setActiveView] = useState<WorkspaceView>(workspace.activeView);
+  const [selectedLocoId, setSelectedLocoId] = useState<string | null>(workspace.selectedLocoId);
+  const [constraints, setConstraints] = useState<UserConstraints>(workspace.constraints);
 
-  // Use edited services hook for localStorage persistence
   const {
     result: editedResult,
     activeServices,
@@ -47,23 +51,42 @@ export function ParsedPreview({ result, onReset }: ParsedPreviewProps) {
     removeStation,
     resetToOriginal,
     hasEdits,
-  } = useEditedServices(result);
+  } = useEditedServices(workspace.originalResult, workspace.editedResult);
 
-  // Day selection for multi-day timetables
   const hasMultipleDays = (editedResult.availableDays?.length ?? 0) > 1;
   const [selectedDayId, setSelectedDayId] = useState<string | null>(
-    editedResult.availableDays?.[0]?.id ?? null
+    workspace.selectedDayId ?? editedResult.availableDays?.[0]?.id ?? null
   );
 
-  // Reset selected day when result changes (new file uploaded)
   useEffect(() => {
-    setSelectedDayId(editedResult.availableDays?.[0]?.id ?? null);
-    // Also clear any existing plans when file changes
-    setPlansWithAnalysis([]);
-    setPlanError(null);
-  }, [editedResult.id]);
+    const availableDayIds = new Set(editedResult.availableDays?.map((day) => day.id) ?? []);
 
-  // Filter all services by selected day (includes deleted - for table view)
+    if (selectedDayId && availableDayIds.size > 0 && !availableDayIds.has(selectedDayId)) {
+      setSelectedDayId(editedResult.availableDays?.[0]?.id ?? null);
+    }
+  }, [editedResult.availableDays, selectedDayId]);
+
+  useEffect(() => {
+    onWorkspaceChange({
+      editedResult,
+      plansWithAnalysis,
+      planError,
+      activeView,
+      selectedLocoId,
+      selectedDayId,
+      constraints,
+    });
+  }, [
+    activeView,
+    constraints,
+    editedResult,
+    onWorkspaceChange,
+    planError,
+    plansWithAnalysis,
+    selectedDayId,
+    selectedLocoId,
+  ]);
+
   const filteredAllServices: Service[] = useMemo(() => {
     if (!hasMultipleDays || !selectedDayId) {
       return editedResult.services;
@@ -79,7 +102,6 @@ export function ParsedPreview({ result, onReset }: ParsedPreviewProps) {
     return activeServices.filter((s) => s.day === selectedDayId);
   }, [activeServices, hasMultipleDays, selectedDayId]);
 
-  // Get all unique times from current day's services (for time dropdowns)
   const allTimes = useMemo(() => {
     const times = new Set<string>();
     filteredAllServices.forEach((s) => {
@@ -116,20 +138,20 @@ export function ParsedPreview({ result, onReset }: ParsedPreviewProps) {
     [addLocomotive]
   );
 
-  // Extract just the plans for compatibility
   const plans = plansWithAnalysis.map((p) => p.plan);
 
   const handleGeneratePlan = useCallback(
-    async (constraints: UserConstraints) => {
+    async (nextConstraints: UserConstraints) => {
+      setConstraints(nextConstraints);
       setIsGenerating(true);
       setPlanError(null);
 
       const response = await generatePlan({
-        parseResultId: editedResult.id,
-        constraints,
+        parseResultId: workspace.originalResult.id,
+        parseResult: editedResult,
+        constraints: nextConstraints,
         maxPlans: 5,
         includeExplanations: true,
-        // Pass selected day for multi-day timetables
         dayId: hasMultipleDays ? (selectedDayId ?? undefined) : undefined,
       });
 
@@ -147,14 +169,13 @@ export function ParsedPreview({ result, onReset }: ParsedPreviewProps) {
         setPlansWithAnalysis([]);
       }
     },
-    [editedResult.id, hasMultipleDays, selectedDayId]
+    [editedResult, hasMultipleDays, selectedDayId, workspace.originalResult.id]
   );
 
   const handleSelectLoco = useCallback((locoId: string | null) => {
     setSelectedLocoId(locoId);
   }, []);
 
-  // Get highlighted locos from selected loco or current plan
   const highlightedLocoIds = selectedLocoId
     ? [selectedLocoId]
     : plans.length > 0
@@ -163,7 +184,6 @@ export function ParsedPreview({ result, onReset }: ParsedPreviewProps) {
 
   return (
     <div className="parsed-preview-layout">
-      {/* Stats pills bar */}
       <div className="stats-bar">
         <div className="stats-bar__pill">
           <span className="stats-bar__value">{filteredActiveServices.length}</span>
@@ -179,9 +199,7 @@ export function ParsedPreview({ result, onReset }: ParsedPreviewProps) {
         </div>
       </div>
 
-      {/* Sidebar + content body */}
       <div className="parsed-preview-layout__body">
-        {/* Sidebar navigation */}
         <nav className="sidebar-nav" aria-label="View selection">
           {NAV_ITEMS.map((item) => {
             const isActive = activeView === item.id;
@@ -200,7 +218,6 @@ export function ParsedPreview({ result, onReset }: ParsedPreviewProps) {
           })}
         </nav>
 
-        {/* Content card */}
         <div className="parsed-preview">
           <header className="parsed-preview__header">
             <h2 className="parsed-preview__title">{editedResult.fileName}</h2>
@@ -234,9 +251,6 @@ export function ParsedPreview({ result, onReset }: ParsedPreviewProps) {
                   Reset edits
                 </button>
               )}
-              <button onClick={onReset} className="parsed-preview__reset-btn" type="button">
-                Start over
-              </button>
             </div>
           </header>
 
@@ -266,6 +280,8 @@ export function ParsedPreview({ result, onReset }: ParsedPreviewProps) {
                 <PlanControls
                   locomotives={editedResult.locomotives}
                   stations={editedResult.stations}
+                  constraints={constraints}
+                  onConstraintsChange={setConstraints}
                   onGeneratePlan={handleGeneratePlan}
                   isGenerating={isGenerating}
                 />

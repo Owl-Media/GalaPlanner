@@ -13,17 +13,17 @@ export async function planRoutes(app: FastifyInstance) {
       try {
         const {
           parseResultId,
+          parseResult: inlineParseResult,
           constraints,
           maxPlans = 5,
           includeExplanations = true,
           dayId,
         } = request.body;
 
-        // Validate request
-        if (!parseResultId) {
+        if (!inlineParseResult && !parseResultId) {
           return reply.status(400).send({
             success: false,
-            error: 'parseResultId is required',
+            error: 'parseResultId or parseResult is required',
           } satisfies PlanResponse);
         }
 
@@ -34,8 +34,7 @@ export async function planRoutes(app: FastifyInstance) {
           } satisfies PlanResponse);
         }
 
-        // Get the parse result
-        const parseResult = storage.getParseResult(parseResultId);
+        const parseResult = inlineParseResult ?? storage.getParseResult(parseResultId!);
         if (!parseResult) {
           return reply.status(404).send({
             success: false,
@@ -85,7 +84,12 @@ export async function planRoutes(app: FastifyInstance) {
         }
 
         request.log.info(
-          { parseResultId, plansGenerated: plans.length, withAnalysis: includeExplanations },
+          {
+            parseResultId,
+            inlineParseResult: Boolean(inlineParseResult),
+            plansGenerated: plans.length,
+            withAnalysis: includeExplanations,
+          },
           'Plans generated successfully'
         );
 

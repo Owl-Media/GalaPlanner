@@ -1,47 +1,54 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import type { UserConstraints, Locomotive, Station, BreakPeriod } from '@gala-planner/shared';
 import './PlanControls.css';
 
 interface PlanControlsProps {
   locomotives: Locomotive[];
   stations: Station[];
+  constraints: UserConstraints;
+  onConstraintsChange: (constraints: UserConstraints) => void;
   onGeneratePlan: (constraints: UserConstraints) => void;
   isGenerating: boolean;
 }
 
-export function PlanControls({ locomotives, stations, onGeneratePlan, isGenerating }: PlanControlsProps) {
-  const [startStation, setStartStation] = useState('');
-  const [endStation, setEndStation] = useState('');
-  const [startTime, setStartTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('17:00');
-  const [transferBuffer, setTransferBuffer] = useState(5);
-  const [mustSeeLocos, setMustSeeLocos] = useState<Set<string>>(new Set());
-  const [breaks, setBreaks] = useState<BreakPeriod[]>([]);
-
+export function PlanControls({
+  locomotives,
+  stations,
+  constraints,
+  onConstraintsChange,
+  onGeneratePlan,
+  isGenerating,
+}: PlanControlsProps) {
   const handleLocoToggle = useCallback((locoId: string) => {
-    setMustSeeLocos((prev) => {
-      const next = new Set(prev);
-      if (next.has(locoId)) {
-        next.delete(locoId);
-      } else {
-        next.add(locoId);
-      }
-      return next;
+    const nextMustSeeLocos = constraints.mustSeeLocoIds.includes(locoId)
+      ? constraints.mustSeeLocoIds.filter((id) => id !== locoId)
+      : [...constraints.mustSeeLocoIds, locoId];
+
+    onConstraintsChange({
+      ...constraints,
+      mustSeeLocoIds: nextMustSeeLocos,
     });
-  }, []);
+  }, [constraints, onConstraintsChange]);
 
   const handleAddBreak = useCallback(() => {
-    setBreaks((prev) => [...prev, { start: '12:00', durationMinutes: 60 }]);
-  }, []);
+    onConstraintsChange({
+      ...constraints,
+      breaks: [...constraints.breaks, { start: '12:00', durationMinutes: 60 }],
+    });
+  }, [constraints, onConstraintsChange]);
 
   const handleRemoveBreak = useCallback((index: number) => {
-    setBreaks((prev) => prev.filter((_, i) => i !== index));
-  }, []);
+    onConstraintsChange({
+      ...constraints,
+      breaks: constraints.breaks.filter((_, i) => i !== index),
+    });
+  }, [constraints, onConstraintsChange]);
 
   const handleBreakChange = useCallback(
     (index: number, field: keyof BreakPeriod, value: string | number | undefined) => {
-      setBreaks((prev) =>
-        prev.map((bp, i) => {
+      onConstraintsChange({
+        ...constraints,
+        breaks: constraints.breaks.map((bp, i) => {
           if (i !== index) return bp;
           if (field === 'preferredStationId' && value === '') {
             const rest = { ...bp };
@@ -49,33 +56,18 @@ export function PlanControls({ locomotives, stations, onGeneratePlan, isGenerati
             return rest;
           }
           return { ...bp, [field]: value };
-        })
-      );
+        }),
+      });
     },
-    []
+    [constraints, onConstraintsChange]
   );
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
-      const constraints: UserConstraints = {
-        timeWindow: {
-          start: startTime,
-          end: endTime,
-        },
-        mustSeeLocoIds: [...mustSeeLocos],
-        stationPreferences: {
-          prefer: [],
-          avoid: [],
-        },
-        breaks,
-        transferBufferMinutes: transferBuffer,
-        startStationId: startStation || undefined,
-        endStationId: endStation || undefined,
-      };
       onGeneratePlan(constraints);
     },
-    [startStation, endStation, startTime, endTime, transferBuffer, mustSeeLocos, breaks, onGeneratePlan]
+    [constraints, onGeneratePlan]
   );
 
   return (
@@ -88,8 +80,11 @@ export function PlanControls({ locomotives, stations, onGeneratePlan, isGenerati
             <div className="plan-controls__station-select">
               <label className="plan-controls__label">Start Station</label>
               <select
-                value={startStation}
-                onChange={(e) => setStartStation(e.target.value)}
+                value={constraints.startStationId || ''}
+                onChange={(e) => onConstraintsChange({
+                  ...constraints,
+                  startStationId: e.target.value || undefined,
+                })}
                 className="plan-controls__input plan-controls__input--full"
               >
                 <option value="">Any</option>
@@ -101,8 +96,11 @@ export function PlanControls({ locomotives, stations, onGeneratePlan, isGenerati
             <div className="plan-controls__station-select">
               <label className="plan-controls__label">End Station</label>
               <select
-                value={endStation}
-                onChange={(e) => setEndStation(e.target.value)}
+                value={constraints.endStationId || ''}
+                onChange={(e) => onConstraintsChange({
+                  ...constraints,
+                  endStationId: e.target.value || undefined,
+                })}
                 className="plan-controls__input plan-controls__input--full"
               >
                 <option value="">Any</option>
@@ -120,15 +118,27 @@ export function PlanControls({ locomotives, stations, onGeneratePlan, isGenerati
         <div className="plan-controls__time-inputs">
           <input
             type="time"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
+            value={constraints.timeWindow?.start || '09:00'}
+            onChange={(e) => onConstraintsChange({
+              ...constraints,
+              timeWindow: {
+                start: e.target.value,
+                end: constraints.timeWindow?.end || '17:00',
+              },
+            })}
             className="plan-controls__input"
           />
           <span className="plan-controls__separator">to</span>
           <input
             type="time"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
+            value={constraints.timeWindow?.end || '17:00'}
+            onChange={(e) => onConstraintsChange({
+              ...constraints,
+              timeWindow: {
+                start: constraints.timeWindow?.start || '09:00',
+                end: e.target.value,
+              },
+            })}
             className="plan-controls__input"
           />
         </div>
@@ -141,8 +151,11 @@ export function PlanControls({ locomotives, stations, onGeneratePlan, isGenerati
             type="number"
             min="0"
             max="60"
-            value={transferBuffer}
-            onChange={(e) => setTransferBuffer(Number(e.target.value))}
+            value={constraints.transferBufferMinutes}
+            onChange={(e) => onConstraintsChange({
+              ...constraints,
+              transferBufferMinutes: Number(e.target.value),
+            })}
             className="plan-controls__input plan-controls__input--small"
           />
           <span className="plan-controls__unit">minutes between trains</span>
@@ -152,12 +165,12 @@ export function PlanControls({ locomotives, stations, onGeneratePlan, isGenerati
       <div className="plan-controls__section">
         <label className="plan-controls__label">
           Breaks
-          {breaks.length > 0 && (
-            <span className="plan-controls__count">({breaks.length})</span>
+          {constraints.breaks.length > 0 && (
+            <span className="plan-controls__count">({constraints.breaks.length})</span>
           )}
         </label>
         <div className="plan-controls__breaks">
-          {breaks.map((bp, index) => (
+          {constraints.breaks.map((bp, index) => (
             <div key={index} className="plan-controls__break-row">
               <div className="plan-controls__break-inputs">
                 <input
@@ -222,8 +235,8 @@ export function PlanControls({ locomotives, stations, onGeneratePlan, isGenerati
         <div className="plan-controls__section">
           <label className="plan-controls__label">
             Must-See Locomotives
-            {mustSeeLocos.size > 0 && (
-              <span className="plan-controls__count">({mustSeeLocos.size} selected)</span>
+            {constraints.mustSeeLocoIds.length > 0 && (
+              <span className="plan-controls__count">({constraints.mustSeeLocoIds.length} selected)</span>
             )}
           </label>
           <div className="plan-controls__locos">
@@ -231,7 +244,7 @@ export function PlanControls({ locomotives, stations, onGeneratePlan, isGenerati
               <label key={loco.id} className="plan-controls__loco">
                 <input
                   type="checkbox"
-                  checked={mustSeeLocos.has(loco.id)}
+                  checked={constraints.mustSeeLocoIds.includes(loco.id)}
                   onChange={() => handleLocoToggle(loco.id)}
                   className="plan-controls__checkbox"
                 />

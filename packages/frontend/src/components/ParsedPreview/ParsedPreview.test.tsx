@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { ParsedPreview } from './ParsedPreview';
 import type { ParseResult } from '@gala-planner/shared';
+import { createWorkspaceFromParseResult } from '../../services/workspaceStore';
 
 const mockResult: ParseResult = {
   id: 'test-id',
@@ -47,21 +48,32 @@ const mockResultWithWarning: ParseResult = {
 };
 
 describe('ParsedPreview', () => {
-  beforeEach(() => {
-    localStorage.clear();
-  });
+  const buildWorkspace = (result: ParseResult) =>
+    createWorkspaceFromParseResult(result, {
+      activeView: 'table',
+    });
 
   it('renders file information', () => {
-    const { container } = render(<ParsedPreview result={mockResult} onReset={vi.fn()} />);
+    const { container } = render(
+      <ParsedPreview
+        workspace={buildWorkspace(mockResult)}
+        onWorkspaceChange={vi.fn()}
+      />
+    );
 
     expect(screen.getByText('test-timetable.csv')).toBeInTheDocument();
     const headerActions = container.querySelector('.parsed-preview__header-actions');
     expect(headerActions).toBeTruthy();
-    expect(within(headerActions as HTMLElement).getByRole('button', { name: 'Start over' })).toBeInTheDocument();
+    expect(within(headerActions as HTMLElement).queryByRole('button', { name: 'Back to library' })).not.toBeInTheDocument();
   });
 
   it('displays statistics', () => {
-    const { container } = render(<ParsedPreview result={mockResult} onReset={vi.fn()} />);
+    const { container } = render(
+      <ParsedPreview
+        workspace={buildWorkspace(mockResult)}
+        onWorkspaceChange={vi.fn()}
+      />
+    );
 
     const statsBar = container.querySelector('.stats-bar');
     expect(statsBar).toBeTruthy();
@@ -72,22 +84,34 @@ describe('ParsedPreview', () => {
   });
 
   it('displays warning issues (not info)', () => {
-    render(<ParsedPreview result={mockResultWithWarning} onReset={vi.fn()} />);
+    render(
+      <ParsedPreview
+        workspace={buildWorkspace(mockResultWithWarning)}
+        onWorkspaceChange={vi.fn()}
+      />
+    );
 
     expect(screen.getByText('Missing arrival time for some services')).toBeInTheDocument();
   });
 
-  it('calls onReset when button is clicked', () => {
-    const onReset = vi.fn();
-    render(<ParsedPreview result={mockResult} onReset={onReset} />);
+  it('does not render a back to library button inside the preview', () => {
+    render(
+      <ParsedPreview
+        workspace={buildWorkspace(mockResult)}
+        onWorkspaceChange={vi.fn()}
+      />
+    );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start over' }));
-
-    expect(onReset).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Back to library' })).not.toBeInTheDocument();
   });
 
   it('shows plan controls and view tabs when services are present', () => {
-    render(<ParsedPreview result={mockResult} onReset={vi.fn()} />);
+    render(
+      <ParsedPreview
+        workspace={buildWorkspace(mockResult)}
+        onWorkspaceChange={vi.fn()}
+      />
+    );
 
     // Sidebar navigation uses buttons
     expect(screen.getByRole('button', { name: /Table/i })).toBeInTheDocument();
