@@ -2,7 +2,7 @@
 
 A web application that helps you plan your day at a train gala event by maximizing the number of locomotives you can see within your time constraints.
 
-## Features (Milestone A)
+## Features
 
 - Upload timetable files (PDF, XLSX, CSV)
 - Preview uploaded file information
@@ -96,15 +96,6 @@ Upload a timetable file for parsing.
 Health check endpoint.
 
 **Response:** `{ "status": "ok" }`
-
-## Roadmap
-
-- [x] Milestone A: Skeleton App (upload + preview)
-- [ ] Milestone B: Deterministic Parsing (CSV/XLSX)
-- [ ] Milestone C: PDF Extraction
-- [ ] Milestone D: Planning Engine
-- [ ] Milestone E: AI Explain + Assist
-- [ ] Milestone F: Polished UI
 
 ## License
 
