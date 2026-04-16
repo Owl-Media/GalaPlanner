@@ -24,6 +24,6 @@ describe('App', () => {
   it('renders the footer', () => {
     render(<App />);
 
-    expect(screen.getByText(/Rich On Rails/i)).toBeInTheDocument();
+    expect(screen.getByRole('contentinfo')).toHaveTextContent('Train Gala Planner - Rich On Rails');
   });
 });

@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { randomUUID } from 'crypto';
 import type {
   ParseResult,
@@ -9,7 +9,6 @@ import type {
   LocomotiveType,
 } from '@gala-planner/shared';
 
-// Common column name variations (same as CSV parser)
 const COLUMN_MAPPINGS: Record<string, string[]> = {
   train: ['train', 'service', 'train number', 'service number', 'no', 'number'],
   locomotive: ['locomotive', 'loco', 'engine', 'traction'],
@@ -22,6 +21,8 @@ const COLUMN_MAPPINGS: Record<string, string[]> = {
   notes: ['notes', 'note', 'remarks', 'comment', 'comments'],
 };
 
+type RowData = Record<string, unknown>;
+
 function normalizeColumnName(name: string): string {
   const lower = String(name).toLowerCase().trim();
   for (const [standard, variants] of Object.entries(COLUMN_MAPPINGS)) {
@@ -32,12 +33,55 @@ function normalizeColumnName(name: string): string {
   return lower;
 }
 
+function formatDate(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
+function parseExcelSerialDate(value: number): string | null {
+  const wholeDays = Math.floor(value);
+  if (!Number.isFinite(wholeDays) || wholeDays <= 0) {
+    return null;
+  }
+
+  // Excel stores dates as days since 1899-12-30.
+  const epoch = Date.UTC(1899, 11, 30);
+  return formatDate(new Date(epoch + wholeDays * 24 * 60 * 60 * 1000));
+}
+
+function unwrapCellValue(value: ExcelJS.CellValue | undefined): unknown {
+  if (value === null || value === undefined) return '';
+  if (value instanceof Date) return value;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'object') {
+    if ('richText' in value) {
+      return value.richText.map((part) => part.text).join('');
+    }
+    if ('text' in value && typeof value.text === 'string') {
+      return value.text;
+    }
+    if ('result' in value) {
+      return unwrapCellValue(value.result);
+    }
+    if ('hyperlink' in value && typeof value.hyperlink === 'string') {
+      return value.hyperlink;
+    }
+  }
+
+  return '';
+}
+
 function parseTime(value: unknown): string | null {
   if (value === null || value === undefined) return null;
 
-  // Handle Excel time as number (fraction of day)
+  if (value instanceof Date) {
+    return `${value.getHours().toString().padStart(2, '0')}:${value.getMinutes().toString().padStart(2, '0')}`;
+  }
+
   if (typeof value === 'number') {
-    const totalMinutes = Math.round(value * 24 * 60);
+    const totalMinutes = Math.round((value % 1) * 24 * 60);
     const hours = Math.floor(totalMinutes / 60) % 24;
     const mins = totalMinutes % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
@@ -46,7 +90,6 @@ function parseTime(value: unknown): string | null {
   const timeStr = String(value).trim();
   if (!timeStr) return null;
 
-  // Handle HH:MM format
   const match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
   if (match) {
     const hours = match[1].padStart(2, '0');
@@ -54,10 +97,9 @@ function parseTime(value: unknown): string | null {
     return `${hours}:${mins}`;
   }
 
-  // Handle HHMM format
-  const match2 = timeStr.match(/^(\d{2})(\d{2})$/);
-  if (match2) {
-    return `${match2[1]}:${match2[2]}`;
+  const compactMatch = timeStr.match(/^(\d{2})(\d{2})$/);
+  if (compactMatch) {
+    return `${compactMatch[1]}:${compactMatch[2]}`;
   }
 
   return null;
@@ -80,36 +122,77 @@ function generateLocoId(name: string): string {
 }
 
 function parseDate(value: unknown): string {
-  if (value === null || value === undefined) {
-    return new Date().toISOString().split('T')[0];
+  if (value === null || value === undefined || value === '') {
+    return formatDate(new Date());
   }
 
-  // Handle Excel date as number (days since 1900)
+  if (value instanceof Date) {
+    return formatDate(value);
+  }
+
   if (typeof value === 'number') {
-    const date = XLSX.SSF.parse_date_code(value);
-    if (date) {
-      return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
-    }
+    return parseExcelSerialDate(value) ?? formatDate(new Date());
   }
 
   const dateStr = String(value).trim();
-  // If already in YYYY-MM-DD format
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
     return dateStr;
   }
 
-  return new Date().toISOString().split('T')[0];
+  const parsed = new Date(dateStr);
+  if (!Number.isNaN(parsed.getTime())) {
+    return formatDate(parsed);
+  }
+
+  return formatDate(new Date());
 }
 
-export function parseXlsx(buffer: Buffer, fileName: string): ParseResult {
+function extractRows(worksheet: ExcelJS.Worksheet): RowData[] {
+  const headerRow = worksheet.getRow(1);
+  const rawHeaderValues = Array.isArray(headerRow.values)
+    ? (headerRow.values.slice(1) as Array<ExcelJS.CellValue | undefined>)
+    : [];
+  const headers: string[] = rawHeaderValues.map((value: ExcelJS.CellValue | undefined) =>
+    normalizeColumnName(String(unwrapCellValue(value)))
+  );
+
+  const rows: RowData[] = [];
+
+  for (let rowIndex = 2; rowIndex <= worksheet.actualRowCount; rowIndex++) {
+    const row = worksheet.getRow(rowIndex);
+    const normalized: RowData = {};
+    let hasContent = false;
+
+    headers.forEach((header: string, columnIndex: number) => {
+      if (!header) return;
+
+      const cellValue = unwrapCellValue(row.getCell(columnIndex + 1).value);
+      normalized[header] = cellValue;
+
+      if (cellValue !== '' && cellValue !== null && cellValue !== undefined) {
+        hasContent = true;
+      }
+    });
+
+    if (hasContent) {
+      rows.push(normalized);
+    }
+  }
+
+  return rows;
+}
+
+export async function parseXlsx(buffer: Buffer, fileName: string): Promise<ParseResult> {
   const issues: ParseIssue[] = [];
   const services: Service[] = [];
   const stationMap = new Map<string, Station>();
   const locoMap = new Map<string, Locomotive>();
 
-  let workbook: XLSX.WorkBook;
+  const workbook = new ExcelJS.Workbook();
+
   try {
-    workbook = XLSX.read(buffer, { type: 'buffer', cellDates: false });
+    const workbookData = buffer as unknown as Parameters<typeof workbook.xlsx.load>[0];
+    await workbook.xlsx.load(workbookData);
   } catch (error) {
     issues.push({
       severity: 'error',
@@ -127,9 +210,8 @@ export function parseXlsx(buffer: Buffer, fileName: string): ParseResult {
     };
   }
 
-  // Get first sheet
-  const sheetName = workbook.SheetNames[0];
-  if (!sheetName) {
+  const worksheet = workbook.worksheets[0];
+  if (!worksheet) {
     issues.push({
       severity: 'error',
       message: 'No sheets found in Excel file',
@@ -146,9 +228,7 @@ export function parseXlsx(buffer: Buffer, fileName: string): ParseResult {
     };
   }
 
-  const sheet = workbook.Sheets[sheetName];
-  const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
-
+  const data = extractRows(worksheet);
   if (data.length === 0) {
     issues.push({
       severity: 'error',
@@ -166,17 +246,7 @@ export function parseXlsx(buffer: Buffer, fileName: string): ParseResult {
     };
   }
 
-  // Normalize column names
-  const normalizedData = data.map((row) => {
-    const normalized: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(row)) {
-      normalized[normalizeColumnName(key)] = value;
-    }
-    return normalized;
-  });
-
-  // Check for required columns
-  const headers = Object.keys(normalizedData[0] || {});
+  const headers = Object.keys(data[0] || {});
   const requiredColumns = ['origin', 'destination', 'depart'];
   const missingColumns = requiredColumns.filter((col) => !headers.includes(col));
 
@@ -189,12 +259,10 @@ export function parseXlsx(buffer: Buffer, fileName: string): ParseResult {
     });
   }
 
-  // Parse each row
-  for (let i = 0; i < normalizedData.length; i++) {
-    const row = normalizedData[i];
-    const rowNum = i + 2; // +2 for 1-indexed and header row
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const rowNum = i + 2;
 
-    // Extract station names
     const originName = String(row.origin || '').trim();
     const destName = String(row.destination || '').trim();
 
@@ -207,7 +275,6 @@ export function parseXlsx(buffer: Buffer, fileName: string): ParseResult {
       continue;
     }
 
-    // Add stations to map
     const originId = generateStationId(originName);
     const destId = generateStationId(destName);
 
@@ -218,7 +285,6 @@ export function parseXlsx(buffer: Buffer, fileName: string): ParseResult {
       stationMap.set(destId, { id: destId, name: destName, aliases: [] });
     }
 
-    // Parse times
     const departTime = parseTime(row.depart);
     const arriveTime = parseTime(row.arrive);
 
@@ -231,7 +297,6 @@ export function parseXlsx(buffer: Buffer, fileName: string): ParseResult {
       continue;
     }
 
-    // Parse locomotive
     const locoName = String(row.locomotive || '').trim();
     const locoIds: string[] = [];
 
@@ -245,11 +310,9 @@ export function parseXlsx(buffer: Buffer, fileName: string): ParseResult {
       }
     }
 
-    // Parse day
     const day = parseDate(row.day);
 
-    // Create service
-    const service: Service = {
+    services.push({
       id: randomUUID(),
       day,
       originStationId: originId,
@@ -259,16 +322,13 @@ export function parseXlsx(buffer: Buffer, fileName: string): ParseResult {
       locomotiveIds: locoIds,
       serviceNotes: String(row.notes || '').trim() ? [String(row.notes).trim()] : [],
       sourceConfidence: 1.0,
-    };
-
-    services.push(service);
+    });
   }
 
-  // Add summary info
   if (services.length > 0) {
     issues.push({
       severity: 'info',
-      message: `Successfully parsed ${services.length} services, ${stationMap.size} stations, ${locoMap.size} locomotives from sheet "${sheetName}"`,
+      message: `Successfully parsed ${services.length} services, ${stationMap.size} stations, ${locoMap.size} locomotives from sheet "${worksheet.name}"`,
       lineage: { fileName },
     });
   }

@@ -11,7 +11,7 @@ interface FileUploadProps {
 export function FileUpload({
   onFileSelect,
   isUploading,
-  acceptedTypes = '.pdf,.xlsx,.xls,.csv',
+  acceptedTypes = '.pdf,.xlsx,.csv',
   onCreateBlank,
 }: FileUploadProps) {
   const [isDragOver, setIsDragOver] = useState(false);
