@@ -6,7 +6,6 @@ import { parseFile } from '../parsers/index.js';
 const ALLOWED_MIME_TYPES = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.ms-excel',
   'text/csv',
 ];
 

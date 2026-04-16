@@ -377,7 +377,7 @@ function parseHeritageFormat(text: string): HeritageService[] {
 
     // Detect loco header row (numbers like 7802, 1450, 13268)
     // Only consider lines that are primarily numbers with optional parentheses
-    if (/^[\d\s()\/]+$/.test(trimmedLine) && trimmedLine.match(/\d{4,5}/)) {
+    if (/^[\d\s()/]+$/.test(trimmedLine) && trimmedLine.match(/\d{4,5}/)) {
       const locoPositions = extractLocosWithPositions(line);
 
       // Main loco row: has multiple locos (>= 3 to distinguish from continuation)
@@ -740,7 +740,7 @@ function convertHeritageServices(
     // Handle locomotive - check if it's a DMU service (no loco)
     const isDMU = hs.locoId === 'DMU';
     let locoIds: string[] = [];
-    let serviceNotes: string[] = [];
+    const serviceNotes: string[] = [];
 
     if (isDMU) {
       // DMU service - no locomotive, add note

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { buildApp } from '../app';
 import { storage } from '../services/storage';
 import type { FastifyInstance } from 'fastify';
+import ExcelJS from 'exceljs';
 
 describe('Upload API', () => {
   let app: FastifyInstance;
@@ -80,6 +81,50 @@ describe('Upload API', () => {
       expect(result.data.services[0].arriveTime).toBe('09:45');
       expect(result.data.locomotives[0].name).toBe('4472 Flying Scotsman');
       expect(result.data.locomotives[0].type).toBe('steam');
+    });
+
+    it('accepts XLSX file and parses services', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Timetable');
+      worksheet.addRow(['Locomotive', 'Type', 'Origin', 'Destination', 'Depart', 'Arrive', 'Day']);
+      worksheet.addRow(['37264', 'diesel', 'Pickering', 'Grosmont', '09:00', '09:45', '2024-10-05']);
+
+      const rawWorkbook = await workbook.xlsx.writeBuffer();
+      const workbookBuffer = Buffer.isBuffer(rawWorkbook) ? rawWorkbook : Buffer.from(rawWorkbook);
+      const boundary = '----TestBoundaryXlsx';
+
+      const payload = Buffer.concat([
+        Buffer.from(
+          [
+            `--${boundary}`,
+            'Content-Disposition: form-data; name="file"; filename="test.xlsx"',
+            'Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            '',
+          ].join('\r\n') + '\r\n'
+        ),
+        workbookBuffer,
+        Buffer.from(`\r\n--${boundary}--\r\n`),
+      ]);
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/upload',
+        headers: {
+          'content-type': `multipart/form-data; boundary=${boundary}`,
+        },
+        payload,
+      });
+
+      expect(response.statusCode).toBe(200);
+
+      const result = response.json();
+      expect(result.success).toBe(true);
+      expect(result.data.fileName).toBe('test.xlsx');
+      expect(result.data.services).toHaveLength(1);
+      expect(result.data.services[0].departTime).toBe('09:00');
+      expect(result.data.services[0].arriveTime).toBe('09:45');
+      expect(result.data.locomotives[0].name).toBe('37264');
+      expect(result.data.locomotives[0].type).toBe('diesel');
     });
 
     it('rejects invalid file types', async () => {

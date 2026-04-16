@@ -44,7 +44,8 @@ export function PlanControls({ locomotives, stations, onGeneratePlan, isGenerati
         prev.map((bp, i) => {
           if (i !== index) return bp;
           if (field === 'preferredStationId' && value === '') {
-            const { preferredStationId: _, ...rest } = bp;
+            const rest = { ...bp };
+            delete rest.preferredStationId;
             return rest;
           }
           return { ...bp, [field]: value };
