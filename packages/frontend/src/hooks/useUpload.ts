@@ -6,40 +6,39 @@ import { randomUUID } from '../utils/uuid';
 export interface UseUploadState {
   isUploading: boolean;
   error: string | null;
-  result: ParseResult | null;
 }
 
 export interface UseUploadReturn extends UseUploadState {
-  upload: (file: File) => Promise<void>;
-  createBlank: () => void;
-  reset: () => void;
+  upload: (file: File) => Promise<ParseResult | null>;
+  createBlank: () => ParseResult;
+  resetError: () => void;
 }
 
 export function useUpload(): UseUploadReturn {
   const [state, setState] = useState<UseUploadState>({
     isUploading: false,
     error: null,
-    result: null,
   });
 
   const upload = useCallback(async (file: File) => {
-    setState({ isUploading: true, error: null, result: null });
+    setState({ isUploading: true, error: null });
 
     const response = await uploadFile(file);
 
     if (response.success && response.data) {
-      setState({ isUploading: false, error: null, result: response.data });
+      setState({ isUploading: false, error: null });
+      return response.data;
     } else {
       setState({
         isUploading: false,
         error: response.error || 'Upload failed',
-        result: null,
       });
+      return null;
     }
   }, []);
 
   const createBlank = useCallback(() => {
-    const blankResult: ParseResult = {
+    return {
       id: randomUUID(),
       fileName: 'New Timetable',
       uploadedAt: new Date().toISOString(),
@@ -48,12 +47,11 @@ export function useUpload(): UseUploadReturn {
       locomotives: [],
       issues: [],
     };
-    setState({ isUploading: false, error: null, result: blankResult });
   }, []);
 
-  const reset = useCallback(() => {
-    setState({ isUploading: false, error: null, result: null });
+  const resetError = useCallback(() => {
+    setState((prev) => ({ ...prev, error: null }));
   }, []);
 
-  return { ...state, upload, createBlank, reset };
+  return { ...state, upload, createBlank, resetError };
 }

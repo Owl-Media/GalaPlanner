@@ -1,3 +1,4 @@
+import type { ParseResult } from '../types/parse-result';
 import type { Plan } from '../types/plan';
 import type { UserConstraints } from '../types/user-constraints';
 import type { PlanAnalysis } from '../types/explanation';
@@ -7,7 +8,9 @@ import type { PlanAnalysis } from '../types/explanation';
  */
 export interface PlanRequest {
   /** ID of the uploaded parse result to plan from */
-  parseResultId: string;
+  parseResultId?: string;
+  /** Inline parse result for browser-restored workspaces */
+  parseResult?: ParseResult;
   /** User constraints for the plan */
   constraints: UserConstraints;
   /** Maximum number of plans to return */

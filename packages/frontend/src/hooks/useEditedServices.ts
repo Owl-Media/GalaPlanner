@@ -1,8 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { ParseResult, Service, Locomotive, Station } from '@gala-planner/shared';
 import { randomUUID } from '../utils/uuid';
-
-const STORAGE_KEY_PREFIX = 'gala-planner-edits-';
 
 /**
  * Check if an update actually changes any values on the service
@@ -21,44 +19,10 @@ function hasActualChanges(service: Service, updates: Partial<Service>): boolean 
 }
 
 /**
- * Hook for managing edited services with localStorage persistence.
- * Allows users to modify parsed timetable data and persist changes across sessions.
+ * Hook for managing edited services inside a workspace.
  */
-export function useEditedServices(originalResult: ParseResult) {
-  const storageKey = `${STORAGE_KEY_PREFIX}${originalResult.id}`;
-
-  // Initialize state from localStorage or use original result
-  const [editedResult, setEditedResult] = useState<ParseResult>(() => {
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (stored) {
-        const parsed = JSON.parse(stored) as ParseResult;
-        // Verify it matches the same original file
-        if (parsed.id === originalResult.id) {
-          return parsed;
-        }
-      }
-    } catch {
-      // Ignore parse errors, use original
-    }
-    return originalResult;
-  });
-
-  // Persist to localStorage when editedResult changes
-  useEffect(() => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(editedResult));
-    } catch {
-      // Ignore storage errors (quota exceeded, etc.)
-    }
-  }, [editedResult, storageKey]);
-
-  // Reset to original when a new file is uploaded
-  useEffect(() => {
-    if (originalResult.id !== editedResult.id) {
-      setEditedResult(originalResult);
-    }
-  }, [originalResult.id, editedResult.id, originalResult]);
+export function useEditedServices(originalResult: ParseResult, initialResult?: ParseResult) {
+  const [editedResult, setEditedResult] = useState<ParseResult>(initialResult ?? originalResult);
 
   /**
    * Update a single service - only marks as edited if values actually change
@@ -215,12 +179,7 @@ export function useEditedServices(originalResult: ParseResult) {
    */
   const resetToOriginal = useCallback(() => {
     setEditedResult(originalResult);
-    try {
-      localStorage.removeItem(storageKey);
-    } catch {
-      // Ignore errors
-    }
-  }, [originalResult, storageKey]);
+  }, [originalResult]);
 
   /**
    * Check if there are any user edits
