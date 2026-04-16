@@ -95,6 +95,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
 }
 
 /* ─── Divider ─── */
@@ -138,4 +139,23 @@
 .file-upload__blank-btn:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .file-upload {
+    min-height: 180px;
+    padding: var(--space-lg) var(--space-md);
+  }
+
+  .file-upload__text {
+    font-size: 0.9375rem;
+  }
+
+  .file-upload__hint {
+    font-size: 0.8125rem;
+  }
+
+  .file-upload__blank-btn {
+    width: 100%;
+  }
 }

@@ -9,6 +9,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1001;
+  padding: var(--space-md, 12px);
 }
 
 .add-loco-modal {
@@ -109,7 +110,15 @@
 
 @media (max-width: 480px) {
   .add-loco-modal {
-    margin: var(--space-md, 12px);
     padding: var(--space-lg, 16px);
+  }
+
+  .add-loco-modal__actions {
+    flex-direction: column-reverse;
+  }
+
+  .add-loco-modal__cancel-btn,
+  .add-loco-modal__add-btn {
+    width: 100%;
   }
 }

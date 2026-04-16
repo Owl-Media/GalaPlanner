@@ -58,6 +58,7 @@
   background-color: var(--color-border);
   border-radius: var(--radius-sm);
   padding: 2px;
+  flex-wrap: wrap;
 }
 
 .plan-display__tab {
@@ -400,6 +401,10 @@
     gap: var(--space-sm);
   }
 
+  .plan-display__header-left {
+    flex-wrap: wrap;
+  }
+
   .plan-display__header-right {
     width: 100%;
     justify-content: space-between;
@@ -417,5 +422,50 @@
 
   .plan-display__leg-route {
     flex-wrap: wrap;
+  }
+
+  .plan-display__tabs {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .plan-display__main {
+    padding: var(--space-sm);
+  }
+
+  .plan-display__header-right {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .plan-display__sidebar {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+  }
+
+  .plan-display__summary {
+    gap: var(--space-md);
+  }
+
+  .plan-display__stat {
+    width: calc(50% - var(--space-sm));
+  }
+
+  .plan-display__transfer {
+    padding-left: 40px;
+  }
+
+  .plan-display__transfer-line {
+    left: 17px;
+  }
+
+  .plan-display__leg {
+    gap: var(--space-sm);
+  }
+
+  .plan-display__leg-info {
+    padding: var(--space-sm);
   }
 }
