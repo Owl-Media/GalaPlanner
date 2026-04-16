@@ -55,6 +55,10 @@ Build all packages:
 npm run build
 ```
 
+### Deployment base path
+
+If your reverse proxy serves the app from a subpath such as `/planner` instead of the domain root, set `APP_BASE_PATH` to that path in your deployment environment. The backend will serve the SPA and API from that prefix, for example `/planner/` and `/planner/api/*`.
+
 ## Project Structure
 
 ```

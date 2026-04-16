@@ -1,7 +1,8 @@
 import { buildApp } from './app.js';
-import { config } from './config.js';
+import { getConfig } from './config.js';
 
 async function main() {
+  const config = getConfig();
   const app = await buildApp();
 
   try {

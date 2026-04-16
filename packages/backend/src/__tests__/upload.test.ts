@@ -6,8 +6,10 @@ import ExcelJS from 'exceljs';
 
 describe('Upload API', () => {
   let app: FastifyInstance;
+  const originalAppBasePath = process.env.APP_BASE_PATH;
 
   beforeEach(async () => {
+    delete process.env.APP_BASE_PATH;
     app = await buildApp();
     await app.ready();
     storage.clear();
@@ -15,6 +17,11 @@ describe('Upload API', () => {
 
   afterEach(async () => {
     await app.close();
+    if (originalAppBasePath === undefined) {
+      delete process.env.APP_BASE_PATH;
+    } else {
+      process.env.APP_BASE_PATH = originalAppBasePath;
+    }
   });
 
   describe('GET /api/health', () => {
@@ -26,6 +33,28 @@ describe('Upload API', () => {
 
       expect(response.statusCode).toBe(200);
       expect(response.json()).toEqual({ status: 'ok' });
+    });
+
+    it('serves API routes from APP_BASE_PATH when configured', async () => {
+      await app.close();
+
+      process.env.APP_BASE_PATH = '/planner';
+      app = await buildApp();
+      await app.ready();
+
+      const prefixedResponse = await app.inject({
+        method: 'GET',
+        url: '/planner/api/health',
+      });
+
+      const unprefixedResponse = await app.inject({
+        method: 'GET',
+        url: '/api/health',
+      });
+
+      expect(prefixedResponse.statusCode).toBe(200);
+      expect(prefixedResponse.json()).toEqual({ status: 'ok' });
+      expect(unprefixedResponse.statusCode).toBe(404);
     });
   });
 

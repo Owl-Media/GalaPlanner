@@ -1,6 +1,17 @@
 import type { UploadResponse, PlanRequest, PlanResponse } from '@gala-planner/shared';
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+function normalizeBaseUrl(value: string | undefined): string {
+  if (!value || value === '/') {
+    return '';
+  }
+
+  return value.endsWith('/') ? value.slice(0, -1) : value;
+}
+
+const runtimeBasePath =
+  typeof window !== 'undefined' ? (window.__APP_BASE_PATH__ ?? import.meta.env.BASE_URL) : import.meta.env.BASE_URL;
+
+const API_BASE = normalizeBaseUrl(import.meta.env.VITE_API_URL || runtimeBasePath);
 
 export async function uploadFile(file: File): Promise<UploadResponse> {
   const formData = new FormData();
