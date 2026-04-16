@@ -331,7 +331,7 @@ export function ServicesTable({
                   key={service.id}
                   className={`services-table__row services-table__row--${statusClass}`}
                 >
-                  <td className="services-table__confidence">
+                  <td className="services-table__confidence" data-label="Status">
                     <span
                       className={`services-table__confidence-badge services-table__confidence-badge--${statusClass}`}
                       title={statusLabel}
@@ -340,7 +340,7 @@ export function ServicesTable({
                       {badgeText}
                     </span>
                   </td>
-                  <td className="services-table__time">
+                  <td className="services-table__time" data-label="Depart">
                     {isDeleted ? (
                       <span className="services-table__deleted-text">{service.departTime}</span>
                     ) : (
@@ -353,7 +353,7 @@ export function ServicesTable({
                       />
                     )}
                   </td>
-                  <td className="services-table__time">
+                  <td className="services-table__time" data-label="Arrive">
                     {isDeleted ? (
                       <span className="services-table__deleted-text">{service.arriveTime}</span>
                     ) : (
@@ -366,7 +366,7 @@ export function ServicesTable({
                       />
                     )}
                   </td>
-                  <td className="services-table__station">
+                  <td className="services-table__station" data-label="From">
                     {isDeleted ? (
                       <span className="services-table__deleted-text">
                         {getStationName(service.originStationId)}
@@ -388,7 +388,7 @@ export function ServicesTable({
                       </>
                     )}
                   </td>
-                  <td className="services-table__station">
+                  <td className="services-table__station" data-label="To">
                     {isDeleted ? (
                       <span className="services-table__deleted-text">
                         {getStationName(service.destStationId)}
@@ -410,7 +410,7 @@ export function ServicesTable({
                       </>
                     )}
                   </td>
-                  <td className="services-table__loco">
+                  <td className="services-table__loco" data-label="Locomotive">
                     {isDeleted ? (
                       <span className="services-table__deleted-text">
                         {service.locomotiveIds.length > 0 ? getLocoInfo(service.locomotiveIds) : '—'}
@@ -430,7 +430,7 @@ export function ServicesTable({
                       </span>
                     )}
                   </td>
-                  <td className="services-table__notes">
+                  <td className="services-table__notes" data-label="Notes">
                     {isDeleted ? (
                       <span className="services-table__deleted-text">
                         {service.serviceNotes.length > 0 ? service.serviceNotes.join('; ') : ''}
@@ -444,7 +444,7 @@ export function ServicesTable({
                     )}
                   </td>
                   {isEditMode && (
-                    <td className="services-table__actions">
+                    <td className="services-table__actions" data-label="Actions">
                       {isDeleted ? (
                         <button
                           className="services-table__restore-btn"

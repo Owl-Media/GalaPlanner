@@ -149,12 +149,19 @@
 
 /* Responsive */
 @media (max-width: 600px) {
+  .timeline-view {
+    padding: var(--space-md);
+  }
+
   .timeline-view__header {
     flex-direction: column;
   }
 
   .timeline-view__legend {
     width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: var(--space-xs);
   }
 
   .timeline-view__service-text {

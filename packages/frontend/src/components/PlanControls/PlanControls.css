@@ -224,3 +224,40 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+@media (max-width: 640px) {
+  .plan-controls {
+    padding: var(--space-md);
+  }
+
+  .plan-controls__station-selects,
+  .plan-controls__time-inputs,
+  .plan-controls__buffer,
+  .plan-controls__break-inputs,
+  .plan-controls__break-station {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .plan-controls__separator {
+    text-align: center;
+  }
+
+  .plan-controls__input,
+  .plan-controls__input--small,
+  .plan-controls__input--label,
+  .plan-controls__input--select {
+    width: 100%;
+  }
+
+  .plan-controls__break-remove {
+    align-self: flex-end;
+    padding-right: 0;
+  }
+
+  .plan-controls__loco {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--space-xs) var(--space-sm);
+  }
+}

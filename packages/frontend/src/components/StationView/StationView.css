@@ -7,6 +7,8 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--space-md);
+  gap: var(--space-sm);
+  flex-wrap: wrap;
 }
 
 .station-view__title {
@@ -173,6 +175,26 @@
 
 /* ─── Responsive ─── */
 @media (max-width: 600px) {
+  .station-view__add-btn {
+    width: 100%;
+  }
+
+  .station-view__row,
+  .station-view__add-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .station-view__count {
+    white-space: normal;
+  }
+
+  .station-view__remove-btn,
+  .station-view__add-confirm,
+  .station-view__add-cancel {
+    width: 100%;
+  }
+
   .station-view__remove-btn {
     opacity: 1;
   }

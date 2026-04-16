@@ -21,6 +21,7 @@
   overflow-x: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  -webkit-overflow-scrolling: touch;
 }
 
 .services-table__table {
@@ -343,5 +344,97 @@
 
   .services-table__edit-toggle {
     text-align: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .services-table__scroll {
+    overflow: visible;
+    border: none;
+    border-radius: 0;
+  }
+
+  .services-table__table,
+  .services-table__table tbody {
+    display: block;
+  }
+
+  .services-table__table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .services-table__row {
+    display: block;
+    margin-bottom: var(--space-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background-color: var(--color-bg-card);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .services-table__table td {
+    display: grid;
+    grid-template-columns: minmax(72px, 92px) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+    min-width: 0;
+  }
+
+  .services-table__table td::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  .services-table__table td:last-child {
+    border-bottom: none;
+  }
+
+  .services-table__table td > * {
+    min-width: 0;
+  }
+
+  .services-table__time,
+  .services-table__station,
+  .services-table__loco,
+  .services-table__notes {
+    min-width: 0;
+    max-width: none;
+  }
+
+  .services-table__confidence {
+    text-align: left;
+  }
+
+  .services-table__confidence-badge {
+    justify-self: start;
+  }
+
+  .services-table__actions {
+    justify-items: end;
+  }
+
+  .services-table__footer {
+    padding: var(--space-sm) 0 0;
+    border: none;
+    background: transparent;
+  }
+
+  .services-table__add-btn {
+    width: 100%;
   }
 }

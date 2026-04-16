@@ -7,6 +7,8 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--space-md);
+  gap: var(--space-sm);
+  flex-wrap: wrap;
 }
 
 .loco-view__title {
@@ -81,6 +83,8 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--space-xs);
+  gap: var(--space-sm);
+  flex-wrap: wrap;
 }
 
 .loco-view__card-header-right {
@@ -210,6 +214,31 @@
 @media (max-width: 600px) {
   .loco-view__grid {
     grid-template-columns: 1fr;
+  }
+
+  .loco-view__add-btn {
+    width: 100%;
+  }
+
+  .loco-view__card-header-right,
+  .loco-view__run {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .loco-view__run {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .loco-view__run-time {
+    min-width: 0;
+  }
+
+  .loco-view__run-route {
+    width: 100%;
+    white-space: normal;
   }
 
   .loco-view__remove-btn {

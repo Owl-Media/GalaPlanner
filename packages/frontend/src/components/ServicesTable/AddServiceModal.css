@@ -9,6 +9,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: var(--space-md, 12px);
 }
 
 .add-service-modal {
@@ -189,7 +190,6 @@
 
 @media (max-width: 480px) {
   .add-service-modal {
-    margin: var(--space-md, 12px);
     padding: var(--space-lg, 16px);
   }
 
@@ -199,5 +199,15 @@
 
   .add-service-modal__inline-action {
     flex-direction: column;
+  }
+
+  .add-service-modal__actions {
+    flex-direction: column-reverse;
+  }
+
+  .add-service-modal__cancel-btn,
+  .add-service-modal__add-btn,
+  .add-service-modal__secondary-btn {
+    width: 100%;
   }
 }

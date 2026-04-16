@@ -73,3 +73,35 @@
   font-size: 0.875rem;
   color: var(--color-text-muted);
 }
+
+@media (max-width: 768px) {
+  .app__header {
+    padding: var(--space-lg) var(--space-md);
+  }
+
+  .app__main {
+    padding: var(--space-lg) var(--space-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .app__header {
+    padding: var(--space-md);
+  }
+
+  .app__title {
+    font-size: 1.5rem;
+  }
+
+  .app__subtitle {
+    font-size: 0.9375rem;
+  }
+
+  .app__main {
+    padding: var(--space-md);
+  }
+
+  .app__footer {
+    padding: var(--space-md);
+  }
+}
