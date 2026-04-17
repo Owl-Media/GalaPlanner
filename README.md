@@ -100,7 +100,3 @@ Upload a timetable file for parsing.
 Health check endpoint.
 
 **Response:** `{ "status": "ok" }`
-
-## License
-
-Private - All rights reserved.
