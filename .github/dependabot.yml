@@ -13,6 +13,11 @@ updates:
     assignees:
       - rich-howell 
 
+    groups:
+    typescript-eslint:
+      patterns:
+        - "@typescript-eslint/*"
+
     commit-message:
       prefix: "[Dep]"
     labels:
