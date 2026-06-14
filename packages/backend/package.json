@@ -26,7 +26,7 @@
     "@types/node": "^25.6.0",
     "@types/papaparse": "^5.3.14",
     "@types/pdf-parse": "^1.1.5",
-    "tsx": "^4.7.1",
+    "tsx": "^4.22.4",
     "typescript": "^6.0.2",
     "vitest": "^4.1.4"
   }
